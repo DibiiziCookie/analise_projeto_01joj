@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jack Pattern — osu!mania</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0d13;
+    --bg-panel:#11141d;
+    --bg-panel-2:#151a25;
+    --line:#212836;
+    --text:#eef1f8;
+    --text-dim:#828aa0;
+    --text-dimmer:#565d70;
+    --outer:#3fe0c4;   /* colunas 1 e 4 */
+    --inner:#f4b942;   /* colunas 2 e 3 */
+    --accent:#ef3d6a;  /* destaque / jack flash */
+    --accent-glow: rgba(239,61,106,0.45);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', sans-serif;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+
+  h1,h2,h3, .display{
+    font-family:'Rajdhani', sans-serif;
+    text-transform:uppercase;
+    letter-spacing:0.02em;
+    margin:0;
+  }
+
+  .mono{
+    font-family:'JetBrains Mono', monospace;
+  }
+
+  a{color:inherit;}
+
+  /* trilhas verticais de fundo — eco das 4 colunas do jogo */
+  .lanes-bg{
+    position:fixed;
+    inset:0;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    max-width:900px;
+    margin:0 auto;
+    left:0;right:0;
+    pointer-events:none;
+    z-index:0;
+    opacity:0.5;
+  }
+  .lanes-bg div{border-left:1px solid var(--line);}
+  .lanes-bg div:first-child{border-left:none;}
+
+  .wrap{
+    position:relative;
+    z-index:1;
+    max-width:900px;
+    margin:0 auto;
+    padding:0 24px;
+  }
+
+  /* ---------- HERO ---------- */
+  .hero{
+    position:relative;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    padding-top:64px;
+    padding-bottom:48px;
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:18px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .eyebrow::before{
+    content:"";
+    width:8px;height:8px;
+    background:var(--accent);
+    display:inline-block;
+    box-shadow:0 0 12px var(--accent-glow);
+  }
+  .hero h1{
+    font-size:clamp(52px, 12vw, 108px);
+    line-height:0.92;
+    font-weight:700;
+    color:var(--text);
+  }
+  .hero h1 span{
+    color:transparent;
+    -webkit-text-stroke:1.5px var(--text);
+  }
+  .hero p.lead{
+    font-family:'Inter', sans-serif;
+    font-size:clamp(15px, 2vw, 18px);
+    color:var(--text-dim);
+    max-width:520px;
+    margin-top:22px;
+    line-height:1.6;
+  }
+
+  .hero-demo{
+    margin-top:48px;
+    border:1px solid var(--line);
+    background:var(--bg-panel);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .hero-demo canvas{display:block; width:100%; height:220px;}
+  .hero-demo-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:10px 16px;
+    border-top:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--text-dimmer);
+    letter-spacing:0.05em;
+  }
+  .hero-demo-label b{color:var(--text-dim); font-weight:500;}
+
+  /* ---------- SECTIONS ---------- */
+  section{
+    padding:88px 0;
+    border-top:1px solid var(--line);
+  }
+  .section-head{
+    display:grid;
+    grid-template-columns: 220px 1fr;
+    gap:32px;
+    margin-bottom:48px;
+  }
+  .section-head .tag{
+    font-family:'JetBrains Mono', monospace;
+    font-size:12px;
+    color:var(--accent);
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    padding-top:6px;
+  }
+  .section-head h2{
+    font-size:clamp(28px,4vw,40px);
+    font-weight:700;
+  }
+  .section-body{
+    color:var(--text-dim);
+    font-size:15.5px;
+    line-height:1.75;
+    max-width:640px;
+  }
+  .section-body strong{color:var(--text); font-weight:600;}
+  .section-body p + p{margin-top:14px;}
+
+  @media (max-width:640px){
+    .section-head{grid-template-columns:1fr;}
+  }
+
+  /* ---------- COMPARE STRIP ---------- */
+  .compare{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    margin-top:36px;
+  }
+  .compare > div{
+    background:var(--bg-panel);
+    padding:20px;
+  }
+  .compare h4{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-dimmer);
+    margin:0 0 8px;
+  }
+  .compare p{
+    margin:0;
+    font-size:13.5px;
+    color:var(--text-dim);
+    line-height:1.5;
+  }
+  @media (max-width:640px){
+    .compare{grid-template-columns:1fr;}
+  }
+
+  /* ---------- CARDS ---------- */
+  .cards{
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+  }
+  .card{
+    border:1px solid var(--line);
+    background:var(--bg-panel);
+    display:grid;
+    grid-template-columns: 1fr 260px;
+  }
+  @media (max-width:760px){
+    .card{grid-template-columns:1fr;}
+  }
+  .card-info{
+    padding:28px;
+    display:flex;
+    flex-direction:column;
+  }
+  .card-num{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--text-dimmer);
+    letter-spacing:0.1em;
+  }
+  .card-title{
+    display:flex;
+    align-items:baseline;
+    gap:12px;
+    margin-top:6px;
+    flex-wrap:wrap;
+  }
+  .card-title h3{
+    font-size:26px;
+    font-weight:700;
+  }
+  .card-alt{
+    font-family:'JetBrains Mono', monospace;
+    font-size:11.5px;
+    color:var(--text-dimmer);
+  }
+  .card-desc{
+    color:var(--text-dim);
+    font-size:14.5px;
+    line-height:1.65;
+    margin-top:12px;
+    max-width:480px;
+  }
+  .card-desc strong{color:var(--text); font-weight:600;}
+
+  .intensity{
+    margin-top:20px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .intensity-label{
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:var(--text-dimmer);
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    width:96px;
+    flex-shrink:0;
+  }
+  .intensity-bar{
+    display:flex;
+    gap:3px;
+  }
+  .intensity-bar span{
+    width:16px;height:6px;
+    background:var(--line);
+  }
+  .intensity-bar span.on{background:var(--accent);}
+
+  .card-demo{
+    border-left:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    background:var(--bg-panel-2);
+  }
+  @media (max-width:760px){
+    .card-demo{border-left:none; border-top:1px solid var(--line);}
+  }
+  .card-demo canvas{display:block; width:100%; height:180px;}
+  .card-demo-foot{
+    padding:8px 14px;
+    border-top:1px solid var(--line);
+    font-family:'JetBrains Mono', monospace;
+    font-size:10.5px;
+    color:var(--text-dimmer);
+    display:flex;
+    justify-content:space-between;
+  }
+
+  /* ---------- CLOSING ---------- */
+  .closing{
+    padding:80px 0 60px;
+  }
+  .closing .note{
+    border:1px solid var(--line);
+    padding:24px 28px;
+    background:var(--bg-panel);
+    font-size:14px;
+    color:var(--text-dim);
+    line-height:1.7;
+  }
+  .closing .note b{color:var(--text);}
+
+  footer{
+    border-top:1px solid var(--line);
+    padding:28px 0 60px;
+    font-family:'JetBrains Mono', monospace;
+    font-size:11px;
+    color:var(--text-dimmer);
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:8px;
+  }
+
+  ::selection{background:var(--accent); color:#0a0d13;}
+
+  @media (prefers-reduced-motion: reduce){
+    * { animation:none !important; transition:none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="lanes-bg"><div></div><div></div><div></div><div></div></div>
+
+<div class="wrap">
+
+  <!-- HERO -->
+  <header class="hero">
+    <div class="eyebrow mono">osu!mania · terminologia de padrões</div>
+    <h1>JACK<br><span>PATTERN</span></h1>
+    <p class="lead">A mesma coluna. O mesmo dedo. De novo, e de novo, e de novo. O jack é um dos padrões mais exigentes do osu!mania — e a raiz de uma família inteira de subpadrões que testam resistência, velocidade e independência das mãos.</p>
+
+    <div class="hero-demo">
+      <canvas id="demo-hero"></canvas>
+      <div class="hero-demo-label">
+        <span>coluna 2 repetindo em sequência</span>
+        <span><b>jack básico</b></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- O QUE É -->
+  <section id="conceito">
+    <div class="section-head">
+      <div class="tag mono">Conceito</div>
+      <h2>O que é um jack?</h2>
+    </div>
+    <div class="section-body">
+      <p>No osu!mania, um <strong>jack</strong> acontece quando duas ou mais notas caem em sequência na <strong>mesma coluna</strong>, obrigando o jogador a repetir a mesma tecla — e o mesmo dedo — em rápida sucessão. O nome vem de <em>jackhammer</em> (britadeira), numa referência ao movimento repetitivo e martelado do dedo sobre a tecla.</p>
+      <p>É um padrão fundamentalmente diferente de um <strong>trill</strong> (alternância rápida entre duas colunas) ou de um <strong>stream</strong> (sequência de notas percorrendo várias colunas): no jack, não há alternância nem deslocamento — só repetição pura no mesmo ponto.</p>
+    </div>
+
+    <div class="compare">
+      <div>
+        <h4>Jack</h4>
+        <p>Notas repetidas na mesma coluna. Testa velocidade de repetição de um único dedo.</p>
+      </div>
+      <div>
+        <h4>Trill</h4>
+        <p>Alternância entre duas colunas vizinhas. Testa coordenação entre dois dedos.</p>
+      </div>
+      <div>
+        <h4>Stream</h4>
+        <p>Sequência linear passando por várias colunas. Testa fluidez e leitura de padrão.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- SUBPATTERNS -->
+  <section id="subpatterns">
+    <div class="section-head">
+      <div class="tag mono">Variações</div>
+      <h2>Os subpatterns do jack</h2>
+    </div>
+    <div class="section-body" style="margin-bottom:40px;">
+      <p>A comunidade de jogos de ritmo (osu!mania, Etterna e primos) foi, ao longo dos anos, batizando variações do jack conforme a duração, a densidade e a forma como ele se combina com outros elementos do chart. Os nomes abaixo não são oficiais nem universais — variam um pouco de comunidade para comunidade — mas são amplamente reconhecidos.</p>
+    </div>
+
+    <div class="cards">
+
+      <!-- MINIJACK -->
+      <article class="card">
+        <div class="card-info">
+          <div class="card-num mono">01</div>
+          <div class="card-title">
+            <h3>Minijack</h3>
+            <span class="card-alt">2–4 notas</span>
+          </div>
+          <p class="card-desc">Uma <strong>rajada curta</strong> de jack, geralmente entre 2 e 4 notas, embutida no meio de um stream ou trill maior. Não exige resistência prolongada — o desafio é o reflexo de encaixar uma repetição rápida sem perder o ritmo do resto do padrão.</p>
+          <div class="intensity">
+            <span class="intensity-label mono">intensidade</span>
+            <div class="intensity-bar"><span class="on"></span><span class="on"></span><span></span><span></span><span></span></div>
+          </div>
+        </div>
+        <div class="card-demo">
+          <canvas data-pattern="minijack"></canvas>
+          <div class="card-demo-foot"><span>coluna 2</span><span>burst embutido</span></div>
+        </div>
+      </article>
+
+      <!-- FULL JACK -->
+      <article class="card">
+        <div class="card-info">
+          <div class="card-num mono">02</div>
+          <div class="card-title">
+            <h3>Full Jack</h3>
+            <span class="card-alt">jackhammer</span>
+          </div>
+          <p class="card-desc">A versão <strong>longa e sustentada</strong> do jack: uma sequência densa de muitas notas seguidas na mesma coluna. É o teste puro de resistência do dedo — quanto mais tempo o padrão dura, mais o jogador precisa manter velocidade sem tensionar a mão.</p>
+          <div class="intensity">
+            <span class="intensity-label mono">intensidade</span>
+            <div class="intensity-bar"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+          </div>
+        </div>
+        <div class="card-demo">
+          <canvas data-pattern="fulljack"></canvas>
+          <div class="card-demo-foot"><span>coluna 3</span><span>run contínuo</span></div>
+        </div>
+      </article>
+
+      <!-- CHORDJACK -->
+      <article class="card">
+        <div class="card-info">
+          <div class="card-num mono">03</div>
+          <div class="card-title">
+            <h3>Chordjack</h3>
+            <span class="card-alt">acordes repetidos</span>
+          </div>
+          <p class="card-desc">Em vez de uma nota isolada, é um <strong>acorde inteiro</strong> (duas ou mais colunas simultâneas) que se repete. Cada "batida" exige pressionar várias teclas ao mesmo tempo, de novo e de novo — por isso costuma ser o subpattern mais cansativo fisicamente, e chegou a virar uma categoria própria de dificuldade em muitos packs de charts.</p>
+          <div class="intensity">
+            <span class="intensity-label mono">intensidade</span>
+            <div class="intensity-bar"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span></div>
+          </div>
+        </div>
+        <div class="card-demo">
+          <canvas data-pattern="chordjack"></canvas>
+          <div class="card-demo-foot"><span>colunas 1+2+3</span><span>acorde repetido</span></div>
+        </div>
+      </article>
+
+      <!-- ANCHOR -->
+      <article class="card">
+        <div class="card-info">
+          <div class="card-num mono">04</div>
+          <div class="card-title">
+            <h3>Anchor</h3>
+            <span class="card-alt">jack + stream</span>
+          </div>
+          <p class="card-desc">Uma coluna fica <strong>"ancorada"</strong>, repetindo em jack a cada batida, enquanto as outras colunas tocam um stream ou trill ao redor dela. Exige independência real entre as mãos: um dedo martela no mesmo lugar enquanto os outros se movem livremente.</p>
+          <div class="intensity">
+            <span class="intensity-label mono">intensidade</span>
+            <div class="intensity-bar"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div>
+          </div>
+        </div>
+        <div class="card-demo">
+          <canvas data-pattern="anchor"></canvas>
+          <div class="card-demo-foot"><span>coluna 2 fixa</span><span>demais em movimento</span></div>
+        </div>
+      </article>
+
+      <!-- JUMPJACK -->
+      <article class="card">
+        <div class="card-info">
+          <div class="card-num mono">05</div>
+          <div class="card-title">
+            <h3>Jumpjack</h3>
+            <span class="card-alt">par repetido</span>
+          </div>
+          <p class="card-desc">Um <strong>jump</strong> (duas colunas pressionadas juntas) que se repete como se fosse um jack de duas notas. É o meio-termo entre o jack de uma coluna só e o chordjack de acordes maiores — comum como transição entre os dois.</p>
+          <div class="intensity">
+            <span class="intensity-label mono">intensidade</span>
+            <div class="intensity-bar"><span class="on"></span><span class="on"></span><span class="on"></span><span></span><span></span></div>
+          </div>
+        </div>
+        <div class="card-demo">
+          <canvas data-pattern="jumpjack"></canvas>
+          <div class="card-demo-foot"><span>colunas 1+4</span><span>par repetido</span></div>
+        </div>
+      </article>
+
+      <!-- ROLL-JACK -->
+      <article class="card">
+        <div class="card-info">
+          <div class="card-num mono">06</div>
+          <div class="card-title">
+            <h3>Roll-Jack</h3>
+            <span class="card-alt">jack + escada</span>
+          </div>
+          <p class="card-desc">Alterna entre rajadas de jack e um <strong>roll</strong> (sequência em "escada" percorrendo as colunas em ordem). O jogador precisa trocar constantemente entre repetição no mesmo lugar e deslocamento lateral, sem perder a leitura do tempo.</p>
+          <div class="intensity">
+            <span class="intensity-label mono">intensidade</span>
+            <div class="intensity-bar"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+          </div>
+        </div>
+        <div class="card-demo">
+          <canvas data-pattern="rolljack"></canvas>
+          <div class="card-demo-foot"><span>1→2→3→4</span><span>jack + roll</span></div>
+        </div>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- CLOSING -->
+  <section class="closing">
+    <div class="section-head">
+      <div class="tag mono">Nota</div>
+      <h2 style="font-size:22px;">Sobre a terminologia</h2>
+    </div>
+    <div class="note">
+      Esses nomes nasceram organicamente dentro das comunidades de jogos de ritmo de teclas verticais (osu!mania, Etterna, Quaver e afins) e podem variar de um grupo, chart pack ou região para outro. <b>Não existe um glossário oficial único</b> — o que está aqui reflete o uso mais comum encontrado nessas comunidades, não uma definição fechada pelo próprio osu!.
+    </div>
+  </section>
+
+  <footer>
+    <span>osu!mania · jack patterns</span>
+    <span>referência informal de comunidade</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  const COL_COLORS = ['var(--outer)','var(--inner)','var(--inner)','var(--outer)'];
+  // resolve CSS var colors to actual hex for canvas use
+  const styles = getComputedStyle(document.documentElement);
+  const RESOLVED = {
+    outer: styles.getPropertyValue('--outer').trim(),
+    inner: styles.getPropertyValue('--inner').trim(),
+    accent: styles.getPropertyValue('--accent').trim(),
+    line: styles.getPropertyValue('--line').trim(),
+    text: styles.getPropertyValue('--text').trim(),
+    panel: styles.getPropertyValue('--bg-panel').trim(),
+  };
+  const LANE_COLOR = [RESOLVED.outer, RESOLVED.inner, RESOLVED.inner, RESOLVED.outer];
+
+  // pattern step libraries: each step = array of active column indices (0-3)
+  const PATTERNS = {
+    hero:      { steps:[[1],[1],[1],[1],[1],[1]], gapSteps:3, speed:2.6 },
+    minijack:  { steps:[[0],[2],[1],[1],[1],[3],[0],[2]], gapSteps:3, speed:2.2 },
+    fulljack:  { steps:[[2],[2],[2],[2],[2],[2],[2],[2],[2]], gapSteps:3, speed:3.1 },
+    chordjack: { steps:[[0,1,2],[0,1,2],[0,1,2],[3],[1,2,3],[1,2,3],[1,2,3]], gapSteps:3, speed:2.4 },
+    anchor:    { steps:[[1,0],[1,2],[1,3],[1,0],[1,2],[1,3]], gapSteps:3, speed:2.2 },
+    jumpjack:  { steps:[[0,3],[0,3],[0,3],[0,3],[0,3]], gapSteps:3, speed:2.4 },
+    rolljack:  { steps:[[1],[1],[1],[0],[1],[2],[3],[1],[1],[1]], gapSteps:3, speed:2.3 }
+  };
+
+  function setupCanvas(canvas){
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    function resize(){
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    return dpr;
+  }
+
+  function runDemo(canvas, patternKey){
+    const pattern = PATTERNS[patternKey];
+    if(!pattern) return;
+    const dpr = setupCanvas(canvas);
+    const ctx = canvas.getContext('2d');
+
+    const laneCount = 4;
+    let notes = []; // {col, y, hit}
+    let stepIndex = 0;
+    let lastStepTime = performance.now();
+    let flashes = [0,0,0,0]; // flash intensity per lane
+    const stepInterval = 1000 / pattern.speed / 2; // ms between steps (roughly)
+    const fallSpeed = 0.34; // fraction of height per ms scaled later
+
+    function laneX(i, w){
+      const laneW = w / laneCount;
+      return i * laneW + laneW/2;
+    }
+
+    function spawnStep(){
+      const seq = pattern.steps;
+      const idx = stepIndex % (seq.length + pattern.gapSteps);
+      if(idx < seq.length){
+        const cols = seq[idx];
+        cols.forEach(c => notes.push({col:c, y:-20}));
+      }
+      stepIndex++;
+    }
+
+    function loop(now){
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+      ctx.clearRect(0,0,w,h);
+
+      // lane dividers
+      ctx.strokeStyle = RESOLVED.line;
+      ctx.lineWidth = 1;
+      for(let i=1;i<laneCount;i++){
+        const x = (w/laneCount)*i;
+        ctx.beginPath();
+        ctx.moveTo(x,0);
+        ctx.lineTo(x,h);
+        ctx.stroke();
+      }
+
+      const judgeY = h - 22;
+
+      // spawn timing
+      if(now - lastStepTime > stepInterval){
+        spawnStep();
+        lastStepTime = now;
+      }
+
+      // update + draw notes
+      const laneW = w/laneCount;
+      const noteW = Math.min(laneW*0.6, 46);
+      const noteH = 10;
+
+      notes.forEach(n => {
+        n.y += h * 0.008;
+        const x = laneX(n.col, w) - noteW/2;
+        if(!n.hit && n.y >= judgeY - noteH){
+          n.hit = true;
+          flashes[n.col] = 1;
+        }
+        if(n.y < h + 20){
+          ctx.fillStyle = n.hit ? RESOLVED.accent : LANE_COLOR[n.col];
+          ctx.fillRect(x, n.y, noteW, noteH);
+        }
+      });
+      notes = notes.filter(n => n.y < h + 30 && !(n.hit && n.y > judgeY + 30));
+
+      // judgment line
+      ctx.strokeStyle = RESOLVED.text;
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.moveTo(0, judgeY);
+      ctx.lineTo(w, judgeY);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      // flashes on judgment line per lane
+      for(let i=0;i<laneCount;i++){
+        if(flashes[i] > 0){
+          ctx.fillStyle = RESOLVED.accent;
+          ctx.globalAlpha = flashes[i] * 0.5;
+          ctx.fillRect(i*laneW, judgeY-14, laneW, 28);
+          ctx.globalAlpha = 1;
+          flashes[i] -= 0.06;
+          if(flashes[i] < 0) flashes[i] = 0;
+        }
+      }
+
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    const hero = document.getElementById('demo-hero');
+    if(hero) runDemo(hero, 'hero');
+
+    document.querySelectorAll('[data-pattern]').forEach(canvas => {
+      runDemo(canvas, canvas.getAttribute('data-pattern'));
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
